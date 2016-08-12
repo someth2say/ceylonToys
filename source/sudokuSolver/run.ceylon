@@ -6,7 +6,10 @@ import ceylon.math.float {
 shared void run() {
 	value sudoku = Sudoku(4, 2);
 	print(sudoku);
-	
+
+	print(sudoku.slice([0, 0]));
+	print(sudoku.slice([0, 1]));
+	print(sudoku.slice([1, 0]));	
 	print(sudoku.slice([1, 1]));
 }
 
@@ -21,48 +24,52 @@ shared class Sudoku(Integer size, Integer dimension = 2) {
 	assert (size > 1);
 	
 	"Size for a Sudoku should be (at least) a quadratic number.
-	                Say, 9 is a valid size (3^2=9), but 5 is not."
+	                   Say, 9 is a valid size (3^2=9), but 5 is not."
 	assert (sqrt(size.float).fractionalPart == 0);
 	Integer slideSize = sqrt(size.float).integer;
 	
-	shared class Cell(shared [Coord+] coords) {
+	shared class Cell(shared [Coord+] coords, shared variable Symbol? symbol = null) {
 		shared alias Coord => Integer;
+		shared alias Symbol => Character;
 		
 		string => coords.string;
-		shared variable Character? symbol = null;
 	}
 	
 	{[Integer+]*} constructAllCoordsRec(Integer size, Integer dimension, {[Integer+]*} current) {
 		if (dimension == 1) {
-			return { for (dim in 1..size) [dim] };
+			return { for (dim in 0 .. size-1) [dim] };
 		} else {
 			value short = constructAllCoordsRec(size, dimension - 1, current);
-			return { for (Integer coord in 1..size) for ([Integer+] other in short) other.withLeading(coord) };
+			return { for (Integer coord in 0 .. size-1) for ([Integer+] other in short) other.withLeading(coord) };
 		}
 	}
 	
 	{Cell*} allCells = { for ([Integer+] coords in constructAllCoordsRec(size, dimension, {})) Cell(coords) };
 	
 	"Slides are hypercubes (squares for 2D, cubes for 3D, hypercubes for 4D...)
-	                Slides are also defined by their coordinates inside the whole Sudoku, following the same order than cells.
-	                That is: For size=4,dimension=2 Sudoku.
-	                Cells are: { [1, 1], [1, 2], [1, 3], [1, 4], [2, 1], [2, 2], [2, 3], [2, 4], [3, 1], [3, 2], [3, 3], [3, 4], [4, 1], [4, 2], [4, 3], [4, 4] } 
-	                Slides are: { [1, 1] -> { [1, 1], [1, 2], [2, 1], [2, 2] },
-	                			   [1, 2] -> { [1, 3], [1, 4], [2, 3], [2, 4] },
-	                			   [2, 1] -> { [3, 1], [3, 2], [4, 1], [4, 2] },
-	                			   [2, 2] -> { [3, 3], [3, 4], [4, 3], [4, 4] } }
-	                In other words, Slide with coordinates [x,y] contain all cells with coordinates [a,b] that: 
-	                	(x-1)*sqrt(size)<a<=x*sqrt(size), (y-1)*sqrt(size)<b<=y*sqrt(size)
-	                "
-	shared {Cell*} slice([Integer+] coords) =>
-		allCells.filter(
+	                   Slides are also defined by their coordinates inside the whole Sudoku, following the same order than cells.
+	                   That is: For size=4,dimension=2 Sudoku.
+	                   Cells are: { [0, 0], [0, 1], [0, 2], [0, 3], [1, 0], [1, 1], [1, 2], [1, 3], [2, 0], [2, 1], [2, 2], [2, 3], [3, 0], [3, 1], [3, 2], [3, 3] } 
+	                   Slides are: { [0, 0] -> { [0, 0], [0, 1], [1, 0], [1, 1] },
+	                   			   [0, 1] -> { [0, 2], [0, 3], [1, 2], [1, 3] },
+	                   			   [1, 0] -> { [2, 0], [2, 1], [3, 0], [3, 1] },
+	                   			   [1, 1] -> { [2, 2], [2, 3], [3, 2], [3, 3] } }
+	                   In other words, Slide with coordinates [x,y] contain all cells with coordinates [a,b] that: 
+	                   	(x)*sqrt(size)<=a<(x+1)*sqrt(size), (y)*sqrt(size)<b<=(y+1)y*sqrt(size) =
+	                   	
+	                   	
+	                   "
+	shared {Cell*} slice([Integer+] coords) {
+		print("Slice(``slideSize``) for ``coords``:");
+		return allCells.filter(
 			(Sudoku.Cell cell) => cell.coords.mapElements((Integer coordIdx, Sudoku.Cell.Coord cellCord) {
-						assert (exists lo = coords[coordIdx], exists hi = coords[coordIdx + 1]);
-						print("lo: ``lo``  hi: ``hi`` cellCord: ``cellCord``");
-						return (lo * slideSize <= cellCord < hi * slideSize);
+						assert (exists sliceCoord = coords[coordIdx]);
+						value result = sliceCoord * slideSize <= cellCord < (sliceCoord + 1) * slideSize;
+						//print("sliceCoord: ``sliceCoord`` cellCord[``coordIdx``]: ``cellCord`` -> ``result``");
+						return (result);
 					})
 					.every((Boolean element) => element)
 		);
-	
+	}
 	string => allCells.string;
 }
