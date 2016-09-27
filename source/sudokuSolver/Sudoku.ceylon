@@ -76,8 +76,7 @@ shared class Sudoku(Integer size=9, Integer dimension = 2, shared [Sudoku.Cell.S
 	);
 	shared {{Cell*}*} hipercubes = { for ([Integer+] coords in constructAllCoordsRec(sliceSize, dimension, {})) hipercube(coords) };
 		
-	{[Cell+]*} slice(Integer dimension) => //cells.group((Cell cell) => cell.coords.slice(dimension)[0].append([null]).append(cell.coords.slice(dimension)[1].rest)).items;
-				cells.group((Sudoku.Cell cell) => cell.coords.get(dimension) else -1).items;
+	{[Cell+]*} slice(Integer dimension) => cells.group((Sudoku.Cell cell) => cell.coords.get(dimension) else -1).items;
 	
 	"Vectors are 1D arrays inside a Sudoku. Vector size is the same as the Sudoku.
 	   All cells in a vector have the same coordinates BUT ONE (say XX).

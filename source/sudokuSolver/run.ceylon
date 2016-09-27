@@ -62,7 +62,7 @@ shared void run() {
 
 	value default2d = Sudoku();
 	RandomSolver().solve(default2d);
-	print("Solved dafault 2D sudoku: ``default2d``");
+	print("Solved default 2D sudoku: ``default2d``");
 
 	value sudoku3d = Sudoku(4, 3, ['1','2','3','4','5','6','7','8','9','0','A','B','C','D','E','F']);
 	RandomSolver().solve(sudoku3d);

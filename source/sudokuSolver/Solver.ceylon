@@ -2,10 +2,6 @@ import java.util {
 	Random
 }
 
-import ceylon.math {
-	...
-}
-
 abstract shared class Solver() {
 	formal shared void solve(Sudoku sudoku, Set<SudokuRule> gamePlayRules = defaultGamePlayRules, Set<SudokuRule> gameOverRules = defaultGameOverRules);
 }
