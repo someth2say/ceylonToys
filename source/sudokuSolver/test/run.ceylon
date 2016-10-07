@@ -12,7 +12,10 @@ import sudokuSolver {
 	slices,
 	RandomSolver,
 	OtherSolver,
-	SudokuBoard
+	SudokuBoard,
+	everyCellHaveValueRule,
+	noRepeatOnSlicesRule,
+	noRepeatOnHipercubesRule
 }
 
 SudokuBoard unsolvable = SudokuBoard(4, 2, ['A','B','C','D']);	
@@ -77,6 +80,9 @@ shared test void testDefaultGameOverRules(){
 	easy2d.setSymbolAt([3,1], '2');
 	easy2d.setSymbolAt([3,2], '1');
 	easy2d.setSymbolAt([3,3], '0');
+	assert (checkRules(easy2d, {everyCellHaveValueRule}));
+	assert (checkRules(easy2d, {noRepeatOnSlicesRule}));	
+	assert (checkRules(easy2d, {noRepeatOnHipercubesRule}));
 	assert (checkRules(easy2d, defaultGameOverRules));
 }
 

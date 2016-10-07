@@ -12,7 +12,7 @@ shared class SudokuCell satisfies Cell<Sudoku> {
 	shared variable Boolean protected;
 	variable Symbol? _symbol = null;
 	
-	shared new (Symbol? symbol = null, Boolean protected = false) extends SudokuCell() {
+	shared new (Symbol? symbol = null, Boolean protected = false) {
 		"Can not make an empty protected cell"
 		assert (!protected || symbol exists);
 		
@@ -45,7 +45,6 @@ shared class SudokuBoard extends Board<Sudoku, SudokuCell> {
 	shared [SudokuCell.Symbol*] allowedSymbols;
 	
 	shared actual MutableMap<[Integer+],SudokuCell> cellMap;
-	shared actual {SudokuCell*} cells;
 
 	shared new(Integer size = 9, Integer dimension = 2, [SudokuCell.Symbol*] allowedSymbols = defaultSudokuSymbols) extends Board<Sudoku, SudokuCell>(size, dimension, SudokuCell) {
 		
@@ -57,8 +56,7 @@ shared class SudokuBoard extends Board<Sudoku, SudokuCell> {
 		
 		this.allowedSymbols = allowedSymbols;
 		
-		cellMap => HashMap { entries = { for ([Integer+] coords in constructAllCoordsRec(size, dimension)) Entry(coords, SudokuCell()) }; };
-		cells => cellMap.items;
+		cellMap = HashMap { entries = { for ([Integer+] coords in constructAllCoordsRec(size, dimension)) Entry(coords, SudokuCell()) }; };
 	}
 	shared new fromSymbols(Integer dimension = 2, [SudokuCell.Symbol*] allowedSymbols = defaultSudokuSymbols) extends SudokuBoard((allowedSymbols.size ^ (1 / dimension)) ^ 2, dimension, allowedSymbols) {}
 
