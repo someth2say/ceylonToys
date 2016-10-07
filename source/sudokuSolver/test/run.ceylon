@@ -5,26 +5,27 @@ import ceylon.test {
 	beforeTest
 }
 import sudokuSolver {
-
 	defaultGamePlayRules,
-	Sudoku,
-	RandomSolver,
-	checkRules,
 	defaultGameOverRules,
-	OtherSolver
+	checkRules,
+	hipercubes,
+	slices,
+	RandomSolver,
+	OtherSolver,
+	SudokuBoard
 }
 
-Sudoku unsolvable = Sudoku(4, 2, ['A','B','C','D']);	
-Sudoku easy2d = Sudoku(4, 2, ['0','1','2','3']);	
-Sudoku easy3d = Sudoku(4, 3, ['A','B','C','D','E','F','G','H']);	
-Sudoku default2d = Sudoku();
+SudokuBoard unsolvable = SudokuBoard(4, 2, ['A','B','C','D']);	
+SudokuBoard easy2d = SudokuBoard(4, 2, ['0','1','2','3']);	
+SudokuBoard easy3d = SudokuBoard(4, 3, ['A','B','C','D','E','F','G','H']);	
+SudokuBoard default2d = SudokuBoard();
 
 shared beforeTestRun void init(){
 
-	default2d.setProtectedSymbol([0,0],'6');
+	default2d.setProtectedSymbolAt([0,0],'6');
 
-	unsolvable.setProtectedSymbol([0,0], 'A');
-	unsolvable.setProtectedSymbol([0,1], 'A');
+	unsolvable.setProtectedSymbolAt([0,0], 'A');
+	unsolvable.setProtectedSymbolAt([0,1], 'A');
 
 }
 
@@ -40,12 +41,12 @@ shared test void allCellsAreGenerated(){
 }
 
 shared test void testHipercubes(){
-	assert(easy2d.hipercubes.size == 4);
+	assert(hipercubes(easy2d).size == 4);
 	//TODO: hipercube contents
 }
 
 shared test void testSlices(){
-	assert(easy2d.slices.size == 8);
+	assert(slices(easy2d).size == 8);
 	//TODO: slice contents
 }
 
@@ -116,7 +117,7 @@ shared test void testSymbols(){
 	assertThatException(()=>default2d.setSymbolAt([3,3], 'A'))
 			.hasType(`AssertionError`);
 	
-	value sudokuWeird = Sudoku(4,2,['W','X','Y','Z']);
+	value sudokuWeird = SudokuBoard(4,2,['W','X','Y','Z']);
 	assertThatException(()=>sudokuWeird.setSymbolAt([3,3], '1'))
 			.hasType(`AssertionError`);
 	
@@ -125,25 +126,25 @@ shared test void testSymbols(){
 
 shared test void testOtherSolver(){
 	print("Solving easy sudoku...");
-	assert(OtherSolver().solve(easy2d));
+	assert(OtherSolver().defaultSolve(easy2d));
 	print("Solved easy sudoku...");
 	
 	print("Solving default sudoku...");
-	assert(OtherSolver().solve(default2d));
+	assert(OtherSolver().defaultSolve(default2d));
 	print("Solved default sudoku...");
 	
 }
 
 shared test void testRandomSolver(){
 	print("Unsolvable easy sudoku...");
-	assert(!RandomSolver().solve(unsolvable ));
+	assert(!RandomSolver().defaultSolve(unsolvable ));
 	
 	print("Solving easy sudoku...");
-	assert(RandomSolver().solve(easy2d));
+	assert(RandomSolver().defaultSolve(easy2d));
 	print("Solved easy sudoku: ``easy2d``");		
 	
 	print("Solving default sudoku...");
-	assert(RandomSolver().solve(default2d));
+	assert(RandomSolver().defaultSolve(default2d));
 	print("Solved default sudoku: ``default2d``");
 	"Protected cells should not be changed during solution."
 	assert(exists cell=default2d.cellAt([0,0]), exists sym=cell.symbol, '6'==sym);
