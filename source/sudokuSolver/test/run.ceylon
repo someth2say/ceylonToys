@@ -5,17 +5,8 @@ import ceylon.test {
 	beforeTest
 }
 import sudokuSolver {
-	defaultGamePlayRules,
-	defaultGameOverRules,
-	checkRules,
-	hipercubes,
-	slices,
 	RandomSolver,
-	OtherSolver,
 	SudokuBoard,
-	everyCellHaveValueRule,
-	noRepeatOnSlicesRule,
-	noRepeatOnHipercubesRule
 }
 
 SudokuBoard unsolvable = SudokuBoard(4, 2, ['A','B','C','D']);	
@@ -44,12 +35,12 @@ shared test void allCellsAreGenerated(){
 }
 
 shared test void testHipercubes(){
-	assert(hipercubes(easy2d).size == 4);
+	assert(easy2d.hipercubes.size == 4);
 	//TODO: hipercube contents
 }
 
 shared test void testSlices(){
-	assert(slices(easy2d).size == 8);
+	assert(easy2d.slices.size == 8);
 	//TODO: slice contents
 }
 
@@ -73,17 +64,17 @@ shared test void testDefaultGameOverRules(){
 	easy2d.setSymbolAt([1,3], '1');
 	easy2d.setSymbolAt([2,0], '1');
 	easy2d.setSymbolAt([2,1], '0');
-	assert (false==checkRules(easy2d, defaultGameOverRules));
+	assert (false==easy2d.checkRules(easy2d.defaultGameOverRules));
 	easy2d.setSymbolAt([2,2], '3');
 	easy2d.setSymbolAt([2,3], '2');
 	easy2d.setSymbolAt([3,0], '3');
 	easy2d.setSymbolAt([3,1], '2');
 	easy2d.setSymbolAt([3,2], '1');
 	easy2d.setSymbolAt([3,3], '0');
-	assert (checkRules(easy2d, {everyCellHaveValueRule}));
-	assert (checkRules(easy2d, {noRepeatOnSlicesRule}));	
-	assert (checkRules(easy2d, {noRepeatOnHipercubesRule}));
-	assert (checkRules(easy2d, defaultGameOverRules));
+	assert (easy2d.checkRules({everyCellHaveValueRule}));
+	assert (easy2d.checkRules({noRepeatOnSlicesRule}));
+	assert (easy2d.checkRules({noRepeatOnHipercubesRule}));
+	assert (easy2d.checkRules(defaultGameOverRules));
 }
 
 shared test void testDefaultGamePlayRules(){

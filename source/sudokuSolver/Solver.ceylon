@@ -1,85 +1,84 @@
 import java.util {
-	Random
+    Random
 }
 
-abstract shared class Solver<GameType, BoardType, CellType>() 
-		given GameType satisfies Game 
-		given CellType satisfies Cell<GameType>
-		given BoardType satisfies Board<GameType, CellType>
-		 {
+abstract shared class Solver<GameT>()
+    given GameT satisfies Game<GameType, BoardType, CellType>
+{
+    alias GameType => GameT;
+    shared alias RuleType => GameType.GameRule;
+    shared alias CellType => GameType.CellType;
+    shared alias BoardType => GameType.BoardType;
 
-	formal shared {CellType*}? step(BoardType sudoku, Set<Boolean(BoardType, Predicate<GameType>)> gamePlayRules);
-	formal shared Boolean rollback(BoardType sudoku);
-	
-	shared default Boolean solve(BoardType sudoku, Set<Boolean(BoardType, Predicate<GameType>)> gamePlayRules, Set<Boolean(BoardType, Predicate<GameType>)> gameOverRules) {
-		if (!checkRules(sudoku, gamePlayRules)){
-			return false;
-		}
-		while (!checkRules(sudoku, gameOverRules)) {
-			if (!step(sudoku, gamePlayRules) exists) {
-				if (!rollback(sudoku)){
-					return false;
-				}
-			} 
-		}
-		return true;
-	}
+    formal shared {CellType*}? step(BoardType sudoku, Set<RuleType> gamePlayRules);
+    formal shared Boolean rollback(BoardType sudoku);
+
+    shared default Boolean solve(BoardType sudoku, Set<RuleType> gamePlayRules, Set<RuleType> gameOverRules) {
+        if (!sudoku.checkRules(gamePlayRules)) {
+            return false;
+        }
+        while (!sudoku.checkRules(gameOverRules)) {
+            if (!step(sudoku, gamePlayRules) exists) {
+                if (!rollback(sudoku)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 }
 
 "Basic sudoku solver.
  Just drops numbers at places in order, and checks if rules are satisfied. 
  If no available places, just clear the sudoku and starts again."
-shared class RandomSolver() extends Solver<Sudoku, SudokuBoard, SudokuCell>() {
-	
-	function addSymbolToCell(SudokuBoard sudoku, SudokuCell cell, Set<SudokuRule> gamePlayRules) {
-		for (SudokuCell.Symbol symbol in sudoku.allowedSymbols) {
-			cell.symbol = symbol;
-			if (checkRulesOnCells(sudoku, cell, gamePlayRules)) {
-				return symbol;
-			}
-		}
-		// No symbol can be used
-		cell.clear();
-		return null;
-	}
-	
-	shared actual default {SudokuCell*}? step(SudokuBoard sudoku, Set<SudokuRule> gamePlayRules) {
-		// First, pick a ramdom empty cell.
-		SudokuCell? randomCell = getRandomEmptyCell(sudoku);
-		if (exists randomCell) {
-			// Try available symbols, in order.
-			value usedSymbol = addSymbolToCell(sudoku, randomCell, gamePlayRules);
-			if (exists usedSymbol) {
-				return [randomCell];
-			} 
-		} 
-			// If no symbol can be used, or unable to find an empty cell, sudoku can not be resolved
-			return null;
-	}
-	
-	SudokuCell? getRandomEmptyCell(SudokuBoard sudoku) {
-		{SudokuCell*} emptyCells = sudoku.cells.filter((SudokuCell cell) => (!cell.symbol exists));
-		if (emptyCells.empty) {
-			return null;
-		} else {
-			value index = (Random().nextLong()).magnitude % (emptyCells.size);
-			SudokuCell? cell = emptyCells.getFromFirst(index);
-			return cell;
-		}
-	}
-	
-	shared actual Boolean rollback(SudokuBoard sudoku){
-		sudoku.reset();
-		return true;
-	}
-	
-	shared Boolean defaultSolve(SudokuBoard sudoku) => super.solve(sudoku, defaultGamePlayRules, defaultGameOverRules);
+shared class RandomSolver() extends Solver<Sudoku>() {
 
+    function addSymbolToCell(BoardType sudoku, CellType cell, Set<RuleType> gamePlayRules) {
+        for (CellType.Symbol symbol in sudoku.allowedSymbols) {
+            cell.symbol = symbol;
+            if (sudoku.checkRulesOnCells(cell, gamePlayRules)) {
+                return symbol;
+            }
+        }
+        // No symbol can be used
+        cell.clear();
+        return null;
+    }
+
+    shared actual default {CellType*}? step(BoardType sudoku, Set<RuleType> gamePlayRules) {
+        // First, pick a ramdom empty cell.
+        CellType? randomCell = getRandomEmptyCell(sudoku);
+        if (exists randomCell) {
+            // Try available symbols, in order.
+            CellType.Symbol usedSymbol = addSymbolToCell(sudoku, randomCell, gamePlayRules);
+            if (exists usedSymbol) {
+                return [randomCell];
+            }
+        }
+        // If no symbol can be used, or unable to find an empty cell, sudoku can not be resolved
+        return null;
+    }
+
+    CellType? getRandomEmptyCell(BoardType sudoku) {
+        {CellType*} emptyCells = sudoku.cells.filter((CellType cell) => (!cell.symbol exists));
+        if (emptyCells.empty) {
+            return null;
+        } else {
+            value index = (Random().nextLong()).magnitude % (emptyCells.size);
+            CellType? cell = emptyCells.getFromFirst(index);
+            return cell;
+        }
+    }
+
+    shared actual Boolean rollback(BoardType sudoku) {
+        sudoku.reset();
+        return true;
+    }
+
+    shared Boolean defaultSolve(BoardType sudoku) => super.solve(sudoku, sudoku.defaultGamePlayRules, sudoku.defaultGameOverRules);
 }
 
-
-
-
+/*
 "A bit more advanced solver, that keeps track what has been already tried, so not repeating steps"
 shared class OtherSolver() extends RandomSolver(){
 	
@@ -117,5 +116,5 @@ shared class OtherSolver() extends RandomSolver(){
 			}
 		}
 	}
-}
+}*/
 
