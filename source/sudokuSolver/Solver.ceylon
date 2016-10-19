@@ -2,20 +2,19 @@ import java.util {
 	Random
 }
 
-abstract shared class Solver<GameType, BoardType, CellType>() 
-		given GameType satisfies Game 
-		given CellType satisfies Cell<GameType>
-		given BoardType satisfies Board<GameType, CellType>
-		 {
+abstract shared class Solver<BoardType,CellType>()
+given BoardType satisfies Game<CellType>
+given CellType satisfies Game<CellType>.Cell
+{
 
-	formal shared {CellType*}? step(BoardType sudoku, Set<Boolean(BoardType, Predicate<GameType>)> gamePlayRules);
+	formal shared {CellType*}? step(BoardType sudoku, Set<Game<CellType>.Rule> gamePlayRules);
 	formal shared Boolean rollback(BoardType sudoku);
-	
-	shared default Boolean solve(BoardType sudoku, Set<Boolean(BoardType, Predicate<GameType>)> gamePlayRules, Set<Boolean(BoardType, Predicate<GameType>)> gameOverRules) {
-		if (!checkRules(sudoku, gamePlayRules)){
+
+	shared default Boolean solve(BoardType sudoku, Set<Game<CellType>.Rule> gamePlayRules, Set<Game<CellType>.Rule> gameOverRules) {
+		if (!sudoku.checkRules(gamePlayRules)) {
 			return false;
 		}
-		while (!checkRules(sudoku, gameOverRules)) {
+		while (!sudoku.checkRules(gameOverRules)) {
 			if (!step(sudoku, gamePlayRules) exists) {
 				if (!rollback(sudoku)){
 					return false;
@@ -29,12 +28,12 @@ abstract shared class Solver<GameType, BoardType, CellType>()
 "Basic sudoku solver.
  Just drops numbers at places in order, and checks if rules are satisfied. 
  If no available places, just clear the sudoku and starts again."
-shared class RandomSolver() extends Solver<Sudoku, SudokuBoard, SudokuCell>() {
-	
-	function addSymbolToCell(SudokuBoard sudoku, SudokuCell cell, Set<SudokuRule> gamePlayRules) {
-		for (SudokuCell.Symbol symbol in sudoku.allowedSymbols) {
+shared class RandomSolver() extends Solver<SudokuBoard,SudokuBoard.Cell>() {
+
+	function addSymbolToCell(SudokuBoard sudoku, SudokuBoard.Cell cell, Set<SudokuBoard.Rule> gamePlayRules) {
+		for (SudokuBoard.Cell.Symbol symbol in sudoku.allowedSymbols) {
 			cell.symbol = symbol;
-			if (checkRulesOnCells(sudoku, cell, gamePlayRules)) {
+			if (sudoku.checkRulesOnCells(cell, gamePlayRules)) {
 				return symbol;
 			}
 		}
@@ -42,10 +41,10 @@ shared class RandomSolver() extends Solver<Sudoku, SudokuBoard, SudokuCell>() {
 		cell.clear();
 		return null;
 	}
-	
-	shared actual default {SudokuCell*}? step(SudokuBoard sudoku, Set<SudokuRule> gamePlayRules) {
+
+	shared actual default {SudokuBoard.Cell*}? step(SudokuBoard sudoku, Set<SudokuBoard.Rule> gamePlayRules) {
 		// First, pick a ramdom empty cell.
-		SudokuCell? randomCell = getRandomEmptyCell(sudoku);
+		SudokuBoard.Cell? randomCell = getRandomEmptyCell(sudoku);
 		if (exists randomCell) {
 			// Try available symbols, in order.
 			value usedSymbol = addSymbolToCell(sudoku, randomCell, gamePlayRules);
@@ -56,14 +55,14 @@ shared class RandomSolver() extends Solver<Sudoku, SudokuBoard, SudokuCell>() {
 			// If no symbol can be used, or unable to find an empty cell, sudoku can not be resolved
 			return null;
 	}
-	
-	SudokuCell? getRandomEmptyCell(SudokuBoard sudoku) {
-		{SudokuCell*} emptyCells = sudoku.cells.filter((SudokuCell cell) => (!cell.symbol exists));
+
+	SudokuBoard.Cell? getRandomEmptyCell(SudokuBoard sudoku) {
+		{SudokuBoard.Cell*} emptyCells = sudoku.cells.filter((SudokuBoard.Cell cell) => (!cell.symbol exists));
 		if (emptyCells.empty) {
 			return null;
 		} else {
 			value index = (Random().nextLong()).magnitude % (emptyCells.size);
-			SudokuCell? cell = emptyCells.getFromFirst(index);
+			SudokuBoard.Cell? cell = emptyCells.getFromFirst(index);
 			return cell;
 		}
 	}
@@ -72,14 +71,12 @@ shared class RandomSolver() extends Solver<Sudoku, SudokuBoard, SudokuCell>() {
 		sudoku.reset();
 		return true;
 	}
-	
-	shared Boolean defaultSolve(SudokuBoard sudoku) => super.solve(sudoku, defaultGamePlayRules, defaultGameOverRules);
+
+	shared Boolean defaultSolve(SudokuBoard sudoku) => super.solve(sudoku, sudoku.defaultGamePlayRules, sudoku.defaultGameOverRules);
 
 }
 
-
-
-
+/*
 "A bit more advanced solver, that keeps track what has been already tried, so not repeating steps"
 shared class OtherSolver() extends RandomSolver(){
 	
@@ -117,5 +114,5 @@ shared class OtherSolver() extends RandomSolver(){
 			}
 		}
 	}
-}
+}*/
 
