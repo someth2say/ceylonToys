@@ -8,7 +8,7 @@ import ceylon.math.float {
 
 shared class Sudoku(Integer size = 9, Integer dimension = 2, shared [SudokuCell.Symbol*] allowedSymbols = defaultSudokuSymbols) extends BoardGame<SudokuBoard,SudokuCell>() {
 
-    SudokuBoard sudokuBoard = SudokuBoard(size, dimension, allowedSymbols);
+    board = SudokuBoard(size, dimension, allowedSymbols);
 
     /** Rules **/
 
@@ -19,35 +19,41 @@ shared class Sudoku(Integer size = 9, Integer dimension = 2, shared [SudokuCell.
 
     Boolean haveUniqueSymbols({SudokuCell*} cells) => cells.map((cell) => cell.symbol).frequencies().map((symbol->count) => count).every((count) => count<2);
 
-    "Rule that validates all slices satisfying predicate have no diplicate symbols.
-     THOSE ARE PART OF INITIALIZATION!"
-    class NoRepeatOnSlicesRule() extends super.BoardGameRule() {
-        shared actual Boolean checkPredicate(Predicate predicate) => sudokuBoard.slices.filter(predicate).every(haveUniqueSymbols);
-    }
-
-    // => (Sudoku.Predicate predicate) => slices.filter(predicate).every(haveUniqueSymbols);
-    "Rule that validates all hipercubes satisfying predicate have no diplicate symbols."
-    shared Sudoku.BoardGameRule noRepeatOnHipercubesRule => (Sudoku.Predicate predicate) => hipercubes.filter(predicate).every(haveUniqueSymbols);
-    "Rule that validates all cells satisfying predicate have a symbols.
-     Note that themselves assert only valid symbols are set, so no use on validating here."
-    shared Sudoku.BoardGameRule everyCellHaveValueRule => (Sudoku.Predicate predicate) => expand(allCells.filter(predicate)).every((cell) => cell.symbol exists);
-
     "Default gameplay rules for Sudoku are
      1.- Do not repeat any symbol on a single slice.
      2.- Do not repeat any symbon on an hipercube."
-    shared Set<GameRule> defaultGamePlayRules => unmodifiableSet(HashSet {
-        elements = { NoRepeatOnSlicesRule, noRepeatOnHipercubesRule };
-    });
+    shared actual {BoardGameRule*} gamePlayRules =>  { NoRepeatOnSlicesRule(), NoRepeatOnHipercubesRule() };
+/*    shared Set<BoardGameRule> defaultGamePlayRules => unmodifiableSet(HashSet {
+        elements = { NoRepeatOnSlicesRule(), NoRepeatOnHipercubesRule() };
+    });*/
 
     "Default gameover rules (definition of solved) for Sudoku are
      1.- Do not repeat any symbol on a single slice.
      2.- Do not repeat any symbon on an hipercube.
      3.- All cells have a valid symbol."
-    shared Set<GameRule> defaultGameOverRules => unmodifiableSet(HashSet {
-        elements = { everyCellHaveValueRule, noRepeatOnSlicesRule, noRepeatOnHipercubesRule };
-    });
+    shared actual {BoardGameRule*} gameOverRules =>  { EveryCellHaveValueRule(), NoRepeatOnSlicesRule(), NoRepeatOnHipercubesRule() };
+    /*shared Set<BoardGameRule> defaultGameOverRules => unmodifiableSet(HashSet {
+        elements = { EveryCellHaveValueRule(), NoRepeatOnSlicesRule(), NoRepeatOnHipercubesRule() };
+    });*/
 
-    shared actual Boolean checkRules() => nothing;
+    //shared object noRepeatOnSlicesRule extends NoRepeatOnSlicesRule() {};
+
+    "Rule that validates all slices satisfying predicate have no diplicate symbols."
+    shared class NoRepeatOnSlicesRule() extends super.BoardGameRule() {
+        shared actual Boolean checkPredicate(Predicate predicate) => board.slices.filter(predicate).every(haveUniqueSymbols);
+    }
+
+    "Rule that validates all hipercubes satisfying predicate have no diplicate symbols."
+    class NoRepeatOnHipercubesRule() extends super.BoardGameRule() {
+        shared actual Boolean checkPredicate(Predicate predicate) => board.hipercubes.filter(predicate).every(haveUniqueSymbols);
+    }
+
+    "Rule that validates all cells satisfying predicate have a symbols.
+     Note that themselves assert only valid symbols are set, so no use on validating here."
+    class EveryCellHaveValueRule() extends super.BoardGameRule() {
+        shared actual Boolean checkPredicate(Predicate predicate) => expand(board.allCells.filter(predicate)).every((cell) => cell.symbol exists);
+    }
+
 
 }
 
@@ -55,8 +61,7 @@ shared class SudokuCell() extends Cell() {
     shared alias Coord => Integer;
     shared alias Symbol => Character;
 
-    "Currently, cells can be protected/unprotected at will.
-             This may change any time."
+    "Currently, cells can be protected/unprotected at will. This may vary anytime"
     shared variable Boolean protected = false;
 
     variable Symbol? _symbol = null;
@@ -147,12 +152,12 @@ shared class SudokuBoard(Integer size = 9, Integer dimension = 2, shared [Sudoku
     }
 
     "Hypercubes (squares for 2D, cubes for 3D, hypercubes for 4D...) are identified by their coordinates inside the whole Sudoku, following the same order than cells.
-     In other words, Hipercube with coordinates [x0..xn] contain all cells with coordinates [a0..an] that: (x)*sqrt(size)<=a<(x+1)*sqrt(size)"
+      In other words, Hipercube with coordinates [x0..xn] contain all cells with coordinates [a0..an] that: (x)*sqrt(size)<=a<(x+1)*sqrt(size)"
     shared SudokuSplit hipercubes => { for ([Integer+] coords in constructAllCoordsRec(hipercubeSize, dimension)) hipercube(coords) };
 
     /**
-   AllCells splitter
-   */
+       AllCells splitter
+       */
     shared SudokuSplit allCells => { cells };
 
     /**
@@ -170,8 +175,3 @@ shared class SudokuBoard(Integer size = 9, Integer dimension = 2, shared [Sudoku
         So we can identify every vector in a Sudoku by [X0..XX..Xn], being XX null, and X0...Xn being all possible values between 0 and size-1; "
     shared SudokuSplit slices => expand((0 .. dimension - 1).map(slice));
 }
-
-
-
-
-

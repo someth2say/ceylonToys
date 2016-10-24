@@ -1,12 +1,8 @@
 import ceylon.collection {
     HashMap
 }
-import ceylon.language.meta.model {
-    Function
-}
 
-shared abstract class Game<GameT>() of GameT
-given GameT satisfies Game<GameT> {
+shared abstract class Game()  {
 
     "Rules are boolean functions that can be applied to a set of cells. In other words, rules apply to a Cell Predicate
         There are two kind of rules:
@@ -18,7 +14,6 @@ given GameT satisfies Game<GameT> {
     }
 
     " Check that game satisfies provided rules (every cell is checked) "
-
     shared formal {GameRule*} gamePlayRules;
     shared formal {GameRule*} gameOverRules;
     shared default Boolean checkGamePlayRules() => checkGameRules(gamePlayRules);
@@ -30,31 +25,37 @@ given GameT satisfies Game<GameT> {
  Can be anything, an empty token, a Symbol holder or a Card Placeholder"
 shared abstract class Cell() {}
 
-shared abstract class BoardGame<BoardType,CellType>() extends Game<BoardGame<BoardType,CellType>>()
+
+shared abstract class BoardGame<BoardType,CellType>() extends Game()
 given CellType satisfies Cell
 given BoardType satisfies Board<CellType>
 {
-    /** Predicates **/
-    "CellPredicates are used to filter the cells where rules should be applied.
-      Is responsibility for the rule to decide between applying the rune to a single cell or to a spedcific type of CellSet.
-      Default predicate is `acceptAllPredicate`, meaning rule will be applied to all cells."
-    shared alias Predicate => Boolean({CellType*});
-
-    //shared Boolean acceptAllPredicate({CellType*} cellSet) => true;
-    shared Predicate acceptAllPredicate => ({CellType*} cellSet) => true;
-    "containsCellPredicate denotates that rule should be applied only to the provided cell, or to CellSets containing the provided cell."
-    shared Boolean containsCellPredicate(CellType cell)({CellType*} cellSet) => cellSet.contains(cell);
-
     shared abstract class BoardGameRule() extends GameRule() {
         shared formal Boolean checkPredicate(Predicate predicate);
     }
+
+    shared formal BoardType board;
+
+    /** Predicates **/
+    "CellPredicates are used to filter the cells where rules should be applied.
+      Is responsibility for the rule to decide between applying the rune to a single cell or to a spedcific type of CellSet."
+    shared alias Predicate => Boolean({CellType*});
+
+    "Default predicate is `acceptAllPredicate`, meaning rule will be applied to all cells."
+    shared Predicate acceptAllPredicate => ({CellType*} cellSet) => true;
+
+    "containsCellPredicate denotates that rule should be applied only to the provided cell, or to CellSets containing the provided cell."
+    shared Boolean containsCellPredicate(CellType cell)({CellType*} cellSet) => cellSet.contains(cell);
 
     "Check that game satisfies provided rules at the provided cell.Assumes cell belong to provided Sudoku.Else, 'true' is returned."
     shared Boolean checkBoardGameRules(Predicate predicate, {GameRule*} rules) => rules.every((rule) => if (is BoardGameRule rule) then rule.checkPredicate(predicate) else rule.check());
 
     shared actual default Boolean checkGamePlayRules() => checkBoardGameRules(acceptAllPredicate, gamePlayRules);
     shared actual default Boolean checkGameOverRules() => checkBoardGameRules(acceptAllPredicate, gameOverRules);
+    shared default Boolean checkGamePlayRulesOnCells(Predicate predicate) => checkBoardGameRules(predicate, gamePlayRules);
+    shared default Boolean checkGamePlayRulesOnCell(CellType cell) => checkBoardGameRules(containsCellPredicate(cell), gamePlayRules);
 
+    shared actual default String string => board.string;
 }
 
 "Tipical sudoku is bidimensional.Rules apply for 2 axis (1 D) and 1 square (2D) 3D sudoku rules are for 3 axis (x, y and z), 3 planes (2 D) and 1 box (3 D)"

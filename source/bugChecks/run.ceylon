@@ -5,7 +5,7 @@ import ceylon.collection {
 }
 
 shared void run() {
-    print({1,2,3.0}.narrow<Integer>);
+    print({ 1, 2, 3.0 }.narrow<Integer>);
 }
 
 alias RefFamily<Type> => Boolean(Collection<Type>);
@@ -53,24 +53,13 @@ Integer base = 1;
 //Integer result = [*identity, ?func, identity](base);
 
 
-/** The base class hierarchy **/
 
-shared class A() {
-    shared default class B() {}
-}
+shared abstract class Cell() {}
 
-shared class SubA() extends A() {
-    shared actual class B() extends super.B() {}
-}
+shared abstract class Game() {}
+abstract shared class GameSolver<GameT>() given GameT satisfies Game {}
+shared abstract class BoardGame() extends Game() {}
 
-shared class Z(){}
-
-/** Now, we want another class that can accept any kind of A's **/
-shared class C<AType>() given AType satisfies A {
-    //AType.B bThing = nothing; // Type parameter should not occur as qualifying type
-    alias AAlias => AType;
-    AAlias.B bThingAliased = nothing; // OK
-}
-
-shared class D<BType>() given BType satisfies A.B {}
+shared abstract class BoardGameSolver<BoardGameT>() extends GameSolver<BoardGameT>()
+    given BoardGameT satisfies BoardGame {}
 

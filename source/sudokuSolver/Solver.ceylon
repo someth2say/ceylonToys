@@ -2,24 +2,31 @@ import java.util {
     Random
 }
 
-abstract shared class Solver<GameT>()
-    given GameT satisfies Game<GameType, BoardType, CellType>
+abstract shared class GameSolver()
 {
-    alias GameType => GameT;
-    shared alias RuleType => GameType.GameRule;
+    /*shared alias RuleType => Game.GameRule;
     shared alias CellType => GameType.CellType;
     shared alias BoardType => GameType.BoardType;
+*/
 
-    formal shared {CellType*}? step(BoardType sudoku, Set<RuleType> gamePlayRules);
-    formal shared Boolean rollback(BoardType sudoku);
+}
 
-    shared default Boolean solve(BoardType sudoku, Set<RuleType> gamePlayRules, Set<RuleType> gameOverRules) {
-        if (!sudoku.checkRules(gamePlayRules)) {
+shared abstract class BoardGameSolver<GameT, BoardT, CellT>() extends GameSolver()
+    given CellT satisfies Cell
+    given BoardT satisfies Board<CellT>
+    given GameT satisfies BoardGame<BoardT, CellT> {
+
+
+    formal shared {CellT*}? step(GameT game);
+    formal shared Boolean rollback(GameT game);
+
+    shared default Boolean solve(GameT game) {
+        if (!game.checkGamePlayRules()) {
             return false;
         }
-        while (!sudoku.checkRules(gameOverRules)) {
-            if (!step(sudoku, gamePlayRules) exists) {
-                if (!rollback(sudoku)) {
+        while (!game.checkGameOverRules()) {
+            if (!step(game) exists) {
+                if (!rollback(game)) {
                     return false;
                 }
             }
@@ -28,15 +35,16 @@ abstract shared class Solver<GameT>()
     }
 }
 
+
 "Basic sudoku solver.
  Just drops numbers at places in order, and checks if rules are satisfied. 
  If no available places, just clear the sudoku and starts again."
-shared class RandomSolver() extends Solver<Sudoku>() {
+shared class SudokuRandomSolver() extends BoardGameSolver<Sudoku, SudokuBoard, SudokuCell>() {
 
-    function addSymbolToCell(BoardType sudoku, CellType cell, Set<RuleType> gamePlayRules) {
-        for (CellType.Symbol symbol in sudoku.allowedSymbols) {
+    function addSymbolToCell(Sudoku sudoku, SudokuCell cell) {
+        for (SudokuCell.Symbol symbol in sudoku.allowedSymbols) {
             cell.symbol = symbol;
-            if (sudoku.checkRulesOnCells(cell, gamePlayRules)) {
+            if (sudoku.checkGamePlayRulesOnCell(cell)) {
                 return symbol;
             }
         }
@@ -45,12 +53,12 @@ shared class RandomSolver() extends Solver<Sudoku>() {
         return null;
     }
 
-    shared actual default {CellType*}? step(BoardType sudoku, Set<RuleType> gamePlayRules) {
+    shared actual default {SudokuCell*}? step(Sudoku sudoku) {
         // First, pick a ramdom empty cell.
-        CellType? randomCell = getRandomEmptyCell(sudoku);
+        SudokuCell? randomCell = getRandomEmptyCell(sudoku);
         if (exists randomCell) {
             // Try available symbols, in order.
-            CellType.Symbol usedSymbol = addSymbolToCell(sudoku, randomCell, gamePlayRules);
+            value usedSymbol = addSymbolToCell(sudoku, randomCell);
             if (exists usedSymbol) {
                 return [randomCell];
             }
@@ -59,23 +67,21 @@ shared class RandomSolver() extends Solver<Sudoku>() {
         return null;
     }
 
-    CellType? getRandomEmptyCell(BoardType sudoku) {
-        {CellType*} emptyCells = sudoku.cells.filter((CellType cell) => (!cell.symbol exists));
+    SudokuCell? getRandomEmptyCell(Sudoku sudoku) {
+        {SudokuCell*} emptyCells = sudoku.board.cells.filter((SudokuCell cell) => (!cell.symbol exists));
         if (emptyCells.empty) {
             return null;
         } else {
             value index = (Random().nextLong()).magnitude % (emptyCells.size);
-            CellType? cell = emptyCells.getFromFirst(index);
+            SudokuCell? cell = emptyCells.getFromFirst(index);
             return cell;
         }
     }
 
-    shared actual Boolean rollback(BoardType sudoku) {
-        sudoku.reset();
+    shared actual Boolean rollback(Sudoku sudoku) {
+        sudoku.board.reset();
         return true;
     }
-
-    shared Boolean defaultSolve(BoardType sudoku) => super.solve(sudoku, sudoku.defaultGamePlayRules, sudoku.defaultGameOverRules);
 }
 
 /*
